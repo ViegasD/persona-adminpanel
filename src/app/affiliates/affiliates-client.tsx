@@ -10,7 +10,7 @@ function fmt(cents: number) {
   return `R$ ${(cents / 100).toFixed(2).replace('.', ',')}`;
 }
 
-const STOREFRONT = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? 'https://recadoanimado.com.br';
+const STOREFRONT = process.env.NEXT_PUBLIC_STOREFRONT_URL ?? 'https://recadoanimado.com';
 
 export function AffiliatesClient({ affiliates: initial }: { affiliates: AffiliateOut[] }) {
   const router = useRouter();
