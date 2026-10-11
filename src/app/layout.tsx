@@ -11,9 +11,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR">
       <body className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-        <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--background)] px-6 py-3 flex items-center gap-6">
+        <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--background)] px-4 sm:px-6 py-3 flex flex-wrap items-center gap-4">
           <h1 className="text-lg font-bold">🎬 Vídeo Personalizado — Admin</h1>
-          <nav className="flex gap-4 text-sm">
+          <nav className="flex flex-wrap gap-x-4 gap-y-2 text-sm min-w-0">
             <Link href="/" className="hover:underline">Clientes</Link>
             <Link href="/orders" className="hover:underline">Pedidos</Link>
             <Link href="/finance" className="hover:underline">Financeiro</Link>

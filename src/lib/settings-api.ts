@@ -18,6 +18,7 @@ export async function fetchSettings(): Promise<Record<string, string>> {
   const res = await fetch(`${API_BASE}/api/admin/settings`, {
     headers: adminHeaders(),
     cache: 'no-store',
+    signal: AbortSignal.timeout(5000),
   });
   if (!res.ok) throw new Error(`Erro ${res.status}`);
   const data: AdminSettings = await res.json();

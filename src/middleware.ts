@@ -10,6 +10,9 @@ export function middleware(request: NextRequest) {
 
   // If no password is configured, skip auth (dev mode)
   if (!pass) {
+    if (process.env.NODE_ENV === 'production') {
+      return new NextResponse('Admin authentication is not configured', { status: 503 });
+    }
     return NextResponse.next();
   }
 

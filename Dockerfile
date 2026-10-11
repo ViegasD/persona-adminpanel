@@ -2,8 +2,8 @@ FROM node:22-alpine AS base
 
 FROM base AS deps
 WORKDIR /app
-COPY package.json ./
-RUN npm install
+COPY package.json package-lock.json ./
+RUN npm ci
 
 FROM base AS builder
 WORKDIR /app
@@ -21,7 +21,6 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 RUN mkdir -p public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 RUN mkdir -p .next && chown -R nextjs:nodejs .next public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
