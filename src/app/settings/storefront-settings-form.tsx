@@ -4,7 +4,7 @@ import type { StorefrontSettings, StorefrontPlan, StorefrontPolicy } from '@/lib
 
 const field = 'w-full min-w-0 px-3 py-2 rounded border border-[var(--border)] bg-[var(--background)]';
 const command = 'px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-50';
-const labels: Record<Exclude<keyof StorefrontPolicy, 'revision'>, string> = {
+const labels: Record<Exclude<keyof StorefrontPolicy, 'revision' | 'video_duration_seconds' | 'video_model'>, string> = {
   new_orders_enabled: 'Aceitar novos pedidos', registration_enabled: 'Permitir cadastro de contas',
   credit_redemption_enabled: 'Permitir pagamento com saldo de creditos', require_account_checkout: 'Exigir conta no checkout',
 };
@@ -47,6 +47,22 @@ export function StorefrontSettingsForm({ initialSettings, initialPlans }: { init
     {!status.processing_enabled && <p role="status" className="text-amber-700">Novos pagamentos dependem da liberacao do worker no servidor. A pausa e a janela historica nao podem ser alteradas aqui.</p>}
     <fieldset disabled={busy} className="space-y-3">
       {Object.entries(labels).map(([key, label]) => <label key={key} className="flex items-center gap-3 text-sm"><input type="checkbox" checked={policy[key as keyof typeof labels]} onChange={e => setPolicy(current => ({ ...current, [key]: e.target.checked }))} />{label}</label>)}
+      <div className="grid sm:grid-cols-2 gap-3 text-sm">
+        <label>Duração dos novos vídeos (segundos)
+          <input className={field} type="number" min="4" max="15" step="1" aria-describedby="video-generation-help"
+            placeholder={String(status.default_video_duration_seconds)} value={policy.video_duration_seconds ?? ''}
+            onChange={e => setPolicy(current => ({ ...current, video_duration_seconds: e.target.value === '' ? null : Number(e.target.value) }))} />
+        </label>
+        <label>Modelo dos novos vídeos
+          <select className={field} value={policy.video_model ?? ''} aria-describedby="video-generation-help"
+            onChange={e => setPolicy(current => ({ ...current, video_model: (e.target.value || null) as StorefrontPolicy['video_model'] }))}>
+            <option value="">Padrão do servidor ({status.default_video_model})</option>
+            <option value="grok-imagine-video">Grok Imagine Video</option>
+            <option value="grok-imagine-video-1.5">Grok Imagine Video 1.5</option>
+          </select>
+        </label>
+      </div>
+      <p id="video-generation-help" className="text-sm">De 4 a 15 segundos. Deixe a duração vazia para usar o padrão do servidor. As alterações valem para novas gerações, sem reiniciar o servidor. Vídeos mais longos ou outro modelo podem aumentar o custo. A fala será ajustada ao tempo disponível. Qualidade: SD 480p; HD 720p.</p>
       <button type="button" className={command} onClick={() => save('policy')}>Salvar regras da loja</button>
     </fieldset>
     <p role="status" aria-live="polite">{message}</p>

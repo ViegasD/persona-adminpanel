@@ -4,6 +4,8 @@ export interface StorefrontPolicy {
   registration_enabled: boolean;
   credit_redemption_enabled: boolean;
   require_account_checkout: boolean;
+  video_duration_seconds: number | null;
+  video_model: 'grok-imagine-video' | 'grok-imagine-video-1.5' | null;
 }
 export interface StorefrontSettings {
   policy: StorefrontPolicy;
@@ -12,6 +14,7 @@ export interface StorefrontSettings {
     recovery_enabled: boolean; account_email_enabled: boolean;
     whatsapp_delivery_enabled: boolean; signup_bonus: number;
     purchase_bonus: number; credits_per_video: number; credit_purchase_enabled: boolean;
+    default_video_duration_seconds: number; default_video_model: string;
   };
 }
 export interface StorefrontPlan {
