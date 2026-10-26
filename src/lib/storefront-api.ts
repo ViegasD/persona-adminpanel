@@ -110,6 +110,20 @@ export interface DashboardOrdersResponse {
   items: DashboardOrder[];
 }
 
+export interface OrderVideoDetail {
+  order_id: number; status: string; recipient_name: string | null;
+  items: { item_id: number; sequence: number; status: string; character_ids: string[];
+    video_url: string | null; scene_url: string | null; thumbnail_url: string | null }[];
+}
+
+export async function fetchOrderVideos(orderId: number): Promise<OrderVideoDetail> {
+  const res = await fetch(`${STOREFRONT_BASE}/api/v1/admin/orders/${orderId}/videos`, {
+    headers: headers(), cache: 'no-store', signal: AbortSignal.timeout(15000),
+  });
+  if (!res.ok) throw new Error(`Não foi possível carregar os vídeos (${res.status}).`);
+  return res.json();
+}
+
 export interface ApiCostRow {
   day: string;
   provider: string;

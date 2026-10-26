@@ -107,7 +107,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
             ) : (
               items.map((o: DashboardOrder) => (
                 <tr key={o.id} className="hover:bg-[var(--bg2)] transition-colors">
-                  <td className="px-4 py-3 font-mono text-[var(--muted-foreground)]">{o.id}</td>
+                  <td className="px-4 py-3 font-mono"><Link className="text-blue-600 underline" href={`/orders/${o.id}`}>#{o.id}<span className="block text-xs font-sans">Ver vídeos</span></Link></td>
                   <td className="px-4 py-3">
                     <span
                       className="px-2 py-0.5 rounded-full text-xs font-medium"
