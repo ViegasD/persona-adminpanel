@@ -11,9 +11,8 @@ export async function storefrontSettingsRequest<T>(path: string, method = 'GET',
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!response.ok) {
-    if (response.status === 409) throw new Error('Configuracoes alteradas por outra sessao. Recarregue antes de salvar.');
     const error=await response.json().catch(()=>null);
-    throw new Error(typeof error?.detail==='string'?error.detail:'Não foi possível consultar a loja. Tente novamente.');
+    throw new Error(typeof error?.detail==='string'?error.detail:response.status===409?'Configurações alteradas. Recarregue antes de salvar.':'Não foi possível consultar a loja. Tente novamente.');
   }
   return response.json();
 }
