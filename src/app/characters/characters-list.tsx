@@ -8,7 +8,7 @@ import { createCharacterAction, uploadCharacterImageAction } from '@/lib/charact
 
 export function CharactersList({ initialCharacters }: { initialCharacters: AdminCharacter[] }) {
   const router = useRouter();
-  const [characters] = useState(initialCharacters);
+  const characters = initialCharacters;
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +33,9 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
       });
       if (newImageFile && created?.id) {
         const buffer = await newImageFile.arrayBuffer();
-        const base64 = Buffer.from(buffer).toString('base64');
+        let binary = '';
+        for (const byte of new Uint8Array(buffer)) binary += String.fromCharCode(byte);
+        const base64 = btoa(binary);
         await uploadCharacterImageAction(created.id, {
           base64,
           filename: newImageFile.name,
@@ -85,21 +87,23 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
         <div className="flex-1">
-          <h2 className="text-xl font-semibold">Personagens</h2>
+          <h1 className="text-[29px] font-bold tracking-tight">Personagens</h1>
           <p className="text-sm text-[var(--muted-foreground)]">
             {activeCount} ativos de {characters.length} total
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 min-w-0">
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar..."
-            className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-[var(--background)] w-48"
+            aria-label="Buscar personagens"
+            className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-white w-48 min-w-0"
           />
           <button
             onClick={() => setShowCreate(!showCreate)}
+            aria-expanded={showCreate}
             className="px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap"
             style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
           >
@@ -124,6 +128,7 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               placeholder="Nome *"
+              aria-label="Nome do personagem"
               className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-[var(--background)]"
             />
             <input
@@ -131,6 +136,7 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
               value={newFranchise}
               onChange={(e) => setNewFranchise(e.target.value)}
               placeholder="Franquia (ex: Frozen)"
+              aria-label="Franquia"
               className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-[var(--background)]"
             />
             <input
@@ -138,6 +144,7 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
               value={newGender}
               onChange={(e) => setNewGender(e.target.value)}
               placeholder="Gênero (ex: feminino)"
+              aria-label="Gênero"
               className="border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-[var(--background)]"
             />
           </div>
@@ -145,6 +152,7 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
             value={newPersonality}
             onChange={(e) => setNewPersonality(e.target.value)}
             placeholder="Descrição / Personalidade"
+            aria-label="Descrição e personalidade"
             rows={2}
             className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-[var(--background)] mb-3"
           />
@@ -206,6 +214,7 @@ export function CharactersList({ initialCharacters }: { initialCharacters: Admin
                         <img
                           src={char.previewUrl}
                           alt={char.name}
+                          loading="lazy"
                           className="w-full h-full object-cover"
                         />
                       ) : (

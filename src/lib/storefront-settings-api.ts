@@ -12,7 +12,8 @@ export async function storefrontSettingsRequest<T>(path: string, method = 'GET',
   });
   if (!response.ok) {
     if (response.status === 409) throw new Error('Configuracoes alteradas por outra sessao. Recarregue antes de salvar.');
-    throw new Error('Nao foi possivel acessar as configuracoes da loja.');
+    const error=await response.json().catch(()=>null);
+    throw new Error(typeof error?.detail==='string'?error.detail:'Não foi possível consultar a loja. Tente novamente.');
   }
   return response.json();
 }

@@ -15,6 +15,7 @@ export interface StorefrontSettings {
     whatsapp_delivery_enabled: boolean; signup_bonus: number;
     purchase_bonus: number; credits_per_video: number; credit_purchase_enabled: boolean;
     default_video_duration_seconds: number; default_video_model: string;
+    default_script_model?:string;
   };
 }
 export interface StorefrontPlan {

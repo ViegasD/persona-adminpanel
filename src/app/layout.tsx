@@ -1,31 +1,11 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { AdminNav } from '@/components/admin-nav';
 import './globals.css';
-
-export const metadata: Metadata = {
-  title: 'Vídeo Personalizado — Admin',
-  description: 'Painel administrativo para aprovação de vídeos personalizados.',
-};
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="pt-BR">
-      <body className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-        <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--background)] px-4 sm:px-6 py-3 flex flex-wrap items-center gap-4">
-          <h1 className="text-lg font-bold">🎬 Vídeo Personalizado — Admin</h1>
-          <nav className="flex flex-wrap gap-x-4 gap-y-2 text-sm min-w-0">
-            <Link href="/" className="hover:underline">Clientes</Link>
-            <Link href="/orders" className="hover:underline">Pedidos</Link>
-            <Link href="/finance" className="hover:underline">Financeiro</Link>
-            <Link href="/affiliates" className="hover:underline">Afiliados</Link>
-            <Link href="/approvals" className="hover:underline">Aprovações</Link>
-            <Link href="/characters" className="hover:underline">Personagens</Link>
-            <Link href="/templates" className="hover:underline">Templates</Link>
-            <Link href="/settings" className="hover:underline">Configurações</Link>
-          </nav>
-        </header>
-        <div className="mx-auto max-w-7xl px-4 py-6">{children}</div>
-      </body>
-    </html>
-  );
+export const metadata:Metadata={title:'Recado Animado · Operações',description:'Pedidos, vídeos e resultados da loja Recado Animado.'};
+export default function RootLayout({children}:{children:React.ReactNode}){
+ return <html lang="pt-BR"><body><a className="skip-link" href="#main-content">Pular para o conteúdo</a><div className="admin-shell"><AdminNav/><div className="admin-workspace">
+  <header className="workspace-topbar"><div><span className="topbar-dot"/>Administração da loja <span className="topbar-divider">/</span><span className="muted">Recado Animado</span></div>
+   <form action="/manager/orders" method="get" role="search"><label className="sr-only" htmlFor="global-search">Buscar pedido ou e-mail</label><input id="global-search" type="search" name="q" placeholder="Buscar pedido ou e-mail…"/><button type="submit" aria-label="Buscar">↵</button></form>
+  </header><main id="main-content" className="admin-main">{children}</main><footer className="workspace-footer">Recado Animado · Operação da loja<span>Valores em BRL, salvo indicação em USD.</span></footer>
+ </div></div></body></html>;
 }

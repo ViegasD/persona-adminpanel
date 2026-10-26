@@ -21,11 +21,11 @@ export function middleware(request: NextRequest) {
   if (authHeader) {
     const [scheme, encoded] = authHeader.split(' ');
     if (scheme === 'Basic' && encoded) {
-      const decoded = atob(encoded);
-      const [u, p] = decoded.split(':');
-      if (u === user && p === pass) {
-        return NextResponse.next();
-      }
+      try {
+        const decoded = atob(encoded);
+        const separator = decoded.indexOf(':');
+        if (separator >= 0 && decoded.slice(0, separator) === user && decoded.slice(separator + 1) === pass) return NextResponse.next();
+      } catch { /* Malformed credentials receive the normal authentication challenge. */ }
     }
   }
 
@@ -38,5 +38,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/debug|api/preview|api/images).*)'],
+  matcher: ['/((?!_next/static|_next/image|fonts/|favicon.ico).*)'],
 };

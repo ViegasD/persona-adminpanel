@@ -112,8 +112,10 @@ export interface DashboardOrdersResponse {
 
 export interface OrderVideoDetail {
   order_id: number; status: string; recipient_name: string | null;
+  email:string|null;phone:string|null;created_at:string;paid_at:string|null;delivered_at:string|null;
   items: { item_id: number; sequence: number; status: string; character_ids: string[];
-    video_url: string | null; scene_url: string | null; thumbnail_url: string | null }[];
+    video_url: string | null; scene_url: string | null; thumbnail_url: string | null;
+    recipient_name:string|null;recipient_age:string|null;occasion:string|null;message:string|null;error:string|null }[];
 }
 
 export async function fetchOrderVideos(orderId: number): Promise<OrderVideoDetail> {

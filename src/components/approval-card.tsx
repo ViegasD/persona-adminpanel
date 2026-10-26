@@ -1,6 +1,7 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useTransition, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { PendingItem } from '@/lib/storefront-api';
 import { approveItemAction, rejectItemAction, retryItemAction } from '@/lib/storefront-actions';
@@ -8,25 +9,30 @@ import { approveItemAction, rejectItemAction, retryItemAction } from '@/lib/stor
 export function ApprovalCard({ item }: { item: PendingItem }) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const [error,setError]=useState('');
+  const [confirmRetry,setConfirmRetry]=useState(false);
 
   function handleApprove() {
     startTransition(async () => {
-      await approveItemAction(item.item_id);
-      router.refresh();
+      setError('');
+      try{await approveItemAction(item.item_id);router.refresh();}
+      catch(e){setError(e instanceof Error?e.message:'Não foi possível aprovar.');}
     });
   }
 
   function handleReject() {
     startTransition(async () => {
-      await rejectItemAction(item.item_id);
-      router.refresh();
+      setError('');
+      try{await rejectItemAction(item.item_id);router.refresh();}
+      catch(e){setError(e instanceof Error?e.message:'Não foi possível rejeitar.');}
     });
   }
 
   function handleRetry() {
     startTransition(async () => {
-      await retryItemAction(item.item_id);
-      router.refresh();
+      setError('');
+      try{await retryItemAction(item.item_id);setConfirmRetry(false);router.refresh();}
+      catch(e){setError(e instanceof Error?e.message:'Não foi possível gerar novamente.');}
     });
   }
 
@@ -42,13 +48,17 @@ export function ApprovalCard({ item }: { item: PendingItem }) {
             <video
               src={item.preview_url}
               controls
+              preload="none"
+              playsInline
+              aria-label={`Prévia do pedido ${item.order_id}`}
               className="absolute inset-0 w-full h-full object-cover"
             />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={item.preview_url}
-              alt="composite"
+              alt={`Cena do pedido ${item.order_id}`}
+              loading="lazy"
               className="absolute inset-0 w-full h-full object-cover"
             />
           )
@@ -60,7 +70,7 @@ export function ApprovalCard({ item }: { item: PendingItem }) {
       {/* Info */}
       <div className="p-3 space-y-1">
         <p className="text-sm font-medium">
-          Pedido #{item.order_id} · Item {item.sequence}
+          <Link className="text-link" href={`/orders/${item.order_id}`}>Pedido #{item.order_id} · Item {item.sequence} →</Link>
         </p>
         {item.recipient_name && (
           <p className="text-xs text-[var(--muted-foreground)]">
@@ -100,14 +110,17 @@ export function ApprovalCard({ item }: { item: PendingItem }) {
         </button>
       </div>
       <div className="px-3 pb-3">
+        {confirmRetry&&<p className="notice">Uma nova tentativa pode gerar custos. Confirme para continuar.</p>}
         <button
-          onClick={handleRetry}
+          onClick={()=>confirmRetry?handleRetry():setConfirmRetry(true)}
           disabled={isPending}
           className="w-full py-1.5 rounded-lg text-sm font-medium transition-colors"
           style={{ background: 'var(--muted)', color: 'var(--muted-foreground)' }}
         >
-          ↺ Regenerar vídeo
+          {confirmRetry?'Confirmar nova geração':'Regenerar vídeo'}
         </button>
+        {confirmRetry&&<button className="text-link" disabled={isPending} onClick={()=>setConfirmRetry(false)}>Cancelar</button>}
+        <p role="status" className="form-message negative">{error}</p>
       </div>
     </div>
   );

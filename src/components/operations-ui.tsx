@@ -1,0 +1,10 @@
+import Link from 'next/link';
+export const money=(cents:number|null|undefined)=>cents==null?'—':new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(cents/100);
+export const usd=(micro:number)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'USD'}).format(micro/1_000_000);
+export const dateTime=(iso:string|null)=>iso?new Date(iso).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Araguaina'}):'—';
+export const labels:Record<string,string>={DRAFT:'Rascunho',AWAITING_PAYMENT:'Aguardando pagamento',PAID:'Pago',QUEUED:'Na fila',GENERATING:'Em geração',READY:'Pronto',DELIVERED:'Entregue',FAILED:'Falhou',REFUNDED:'Reembolsado',PENDING:'Pendente',COMPOSITING:'Criando cena',RENDERING:'Gerando vídeo',AWAITING_APPROVAL:'Em revisão',APPROVED:'Aprovado'};
+export function Status({value}:{value:string}){return <span className={`status-badge status-${value.toLowerCase()}`}><i aria-hidden="true"/>{labels[value]||value}</span>;}
+export function PageHeader({eyebrow,title,description,children}:{eyebrow?:string;title:string;description?:string;children?:React.ReactNode}){return <header className="page-header"><div>{eyebrow&&<p className="eyebrow">{eyebrow}</p>}<h1>{title}</h1>{description&&<p className="page-description">{description}</p>}</div>{children&&<div className="page-actions">{children}</div>}</header>;}
+export function Stat({label,value,note,tone}:{label:string;value:string;note?:string;tone?:string}){return <div className={`metric ${tone||''}`}><dt>{label}</dt><dd>{value}</dd>{note&&<p>{note}</p>}</div>;}
+export function Empty({title,description,href,label}:{title:string;description:string;href?:string;label?:string}){return <div className="empty-state"><span className="empty-symbol" aria-hidden="true">—</span><h2>{title}</h2><p>{description}</p>{href&&<Link className="button secondary" href={href}>{label||'Voltar aos pedidos'}</Link>}</div>;}
+export function ErrorState(){return <Empty title="Não foi possível carregar os dados" description="Atualize a página para tentar novamente. Nenhum pedido foi alterado." href="/" label="Voltar à visão geral"/>;}

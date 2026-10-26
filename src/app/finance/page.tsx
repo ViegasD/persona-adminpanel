@@ -1,162 +1,22 @@
-import { fetchDashboardSummary, fetchApiCosts } from '@/lib/storefront-api';
-
-function fmt(cents: number) {
-  return `R$ ${(cents / 100).toFixed(2).replace('.', ',')}`;
-}
-
-function fmtUsd(microUsd: number) {
-  return `$${(microUsd / 1_000_000).toFixed(2)}`;
-}
-
-function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--bg2)] p-5">
-      <p className="text-sm text-[var(--muted-foreground)] mb-1">{label}</p>
-      <p className="text-2xl font-bold">{value}</p>
-      {sub && <p className="text-xs text-[var(--muted-foreground)] mt-1">{sub}</p>}
-    </div>
-  );
-}
-
-export default async function FinancePage() {
-  let summary;
-  let costs;
-  try {
-    [summary, costs] = await Promise.all([fetchDashboardSummary(), fetchApiCosts(30)]);
-  } catch {
-    return (
-      <div className="text-center py-20">
-        <p className="text-[var(--error)] text-lg font-medium">Erro ao carregar dados financeiros</p>
-      </div>
-    );
-  }
-
-  const { revenue_cents, order_counts, conversion, api_cost_micro_usd } = summary;
-
-  // Aggregate total API costs per provider
-  const allProviders = Array.from(
-    new Set(costs.map((r) => r.provider))
-  ).sort();
-
-  // Group daily costs by day for the table
-  const days = Array.from(new Set(costs.map((r) => r.day))).sort().reverse().slice(0, 14);
-
-  const costByDayProvider: Record<string, Record<string, number>> = {};
-  for (const row of costs) {
-    if (!costByDayProvider[row.day]) costByDayProvider[row.day] = {};
-    costByDayProvider[row.day][row.provider] =
-      (costByDayProvider[row.day][row.provider] ?? 0) + row.cost_micro_usd;
-  }
-
-  const totalApiCostToday = Object.values(api_cost_micro_usd.today).reduce((a, b) => a + b, 0);
-  const totalApiCostWeek = Object.values(api_cost_micro_usd.week).reduce((a, b) => a + b, 0);
-  const totalApiCostMonth = Object.values(api_cost_micro_usd.month).reduce((a, b) => a + b, 0);
-  const totalApiCostAll = Object.values(api_cost_micro_usd.total).reduce((a, b) => a + b, 0);
-
-  // Rough margin: revenue - api costs
-  const marginCents = revenue_cents.month - Math.round(totalApiCostMonth / 10000);
-
-  return (
-    <div className="space-y-8">
-      <h2 className="text-xl font-semibold">Financeiro</h2>
-
-      {/* Revenue cards */}
-      <section>
-        <h3 className="text-sm font-semibold text-[var(--muted-foreground)] uppercase tracking-wide mb-3">
-          Receita
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <StatCard label="Hoje" value={fmt(revenue_cents.today)} />
-          <StatCard label="Esta semana" value={fmt(revenue_cents.week)} />
-          <StatCard label="Este mês" value={fmt(revenue_cents.month)} sub={`Margem ~${fmt(marginCents)}`} />
-          <StatCard label="Total" value={fmt(revenue_cents.total)} />
-        </div>
-      </section>
-
-      {/* Conversion + order status */}
-      <section>
-        <h3 className="text-sm font-semibold text-[var(--muted-foreground)] uppercase tracking-wide mb-3">
-          Funil
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <StatCard
-            label="Conversão"
-            value={`${conversion.rate_pct}%`}
-            sub={`${conversion.paid_orders} pagos / ${conversion.total_orders} total`}
-          />
-          {(['DRAFT', 'AWAITING_PAYMENT', 'PAID', 'DELIVERED', 'FAILED'] as const).map((s) => (
-            <StatCard key={s} label={s} value={String(order_counts[s] ?? 0)} />
-          ))}
-        </div>
-      </section>
-
-      {/* API cost summary */}
-      <section>
-        <h3 className="text-sm font-semibold text-[var(--muted-foreground)] uppercase tracking-wide mb-3">
-          Custos de API
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-          <StatCard label="Hoje" value={fmtUsd(totalApiCostToday)} />
-          <StatCard label="Esta semana" value={fmtUsd(totalApiCostWeek)} />
-          <StatCard label="Este mês" value={fmtUsd(totalApiCostMonth)} />
-          <StatCard label="Total" value={fmtUsd(totalApiCostAll)} />
-        </div>
-
-        {/* Per-provider totals */}
-        {allProviders.length > 0 && (
-          <div className="flex gap-4 flex-wrap mb-6">
-            {allProviders.map((p) => (
-              <div
-                key={p}
-                className="rounded-lg border border-[var(--border)] bg-[var(--bg2)] px-4 py-3 text-sm"
-              >
-                <span className="font-semibold capitalize">{p}</span>
-                <span className="ml-2 text-[var(--muted-foreground)]">
-                  {fmtUsd(api_cost_micro_usd.total[p] ?? 0)} total
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Daily breakdown table */}
-        {days.length > 0 ? (
-          <div className="overflow-x-auto rounded-lg border border-[var(--border)]">
-            <table className="w-full text-sm">
-              <thead className="bg-[var(--bg2)] text-[var(--muted-foreground)]">
-                <tr>
-                  <th className="text-left px-4 py-3 font-medium">Dia</th>
-                  {allProviders.map((p) => (
-                    <th key={p} className="text-right px-4 py-3 font-medium capitalize">
-                      {p}
-                    </th>
-                  ))}
-                  <th className="text-right px-4 py-3 font-medium">Total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border)]">
-                {days.map((day) => {
-                  const row = costByDayProvider[day] ?? {};
-                  const dayTotal = Object.values(row).reduce((a, b) => a + b, 0);
-                  return (
-                    <tr key={day} className="hover:bg-[var(--bg2)] transition-colors">
-                      <td className="px-4 py-3 font-mono">{day}</td>
-                      {allProviders.map((p) => (
-                        <td key={p} className="px-4 py-3 text-right text-[var(--muted-foreground)]">
-                          {row[p] ? fmtUsd(row[p]) : '—'}
-                        </td>
-                      ))}
-                      <td className="px-4 py-3 text-right font-medium">{fmtUsd(dayTotal)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="text-[var(--muted-foreground)] text-sm">Nenhum custo registrado nos últimos 30 dias.</p>
-        )}
-      </section>
-    </div>
-  );
+import Link from 'next/link';
+import {fetchFinance} from '@/lib/finance-api';
+import {PageHeader,Stat,money,usd,ErrorState,Empty} from '@/components/operations-ui';
+import {FinanceOrderTable} from '@/components/finance-order-table';
+import {ReportFilters} from '@/components/report-filters';
+import {ReportPagination} from '@/components/report-pagination';
+export const dynamic='force-dynamic';
+export default async function Finance({searchParams}:{searchParams:Promise<Record<string,string|undefined>>}){
+ const params=await searchParams;const page=Math.max(1,Math.floor(Number(params.page)||1));
+ const report=await fetchFinance({...params,limit:50,offset:(page-1)*50}).catch(()=>null);
+ if(!report)return <ErrorState/>;const s=report.summary;
+ const exportParams=new URLSearchParams();for(const[k,v]of Object.entries(params))if(v&&k!=='page')exportParams.set(k,v);
+ return <><PageHeader eyebrow="Resultados e custos" title="Financeiro" description="Receita recebida, taxas e custos de geração, com detalhamento por vídeo."><Link className="button secondary" href="/settings#finance">Configurar cálculo</Link><a className="button" href={`/manager/api/finance-export?${exportParams}`}>Exportar CSV ↓</a></PageHeader>
+  <dl className="metric-strip"><Stat label="Receita após reembolsos" value={money(s.net_revenue_cents)} note={`${money(s.refunded_cents)} reembolsados`}/><Stat label="Taxas de pagamento" value={money(s.fee_cents)} note={s.fee_cents==null?'Conciliação ou estimativa pendente':'Taxas conciliadas, informadas ou estimadas'}/><Stat label="Geração registrada" value={money(s.cost_brl_cents)} note={`${usd(s.cost_micro_usd)} · ${report.settings.usd_brl?`câmbio R$ ${report.settings.usd_brl}`:'configure USD/BRL'}`}/><Stat label="Margem de contribuição" value={money(s.contribution_cents)} note={`${s.calculated_orders}/${s.paid_orders} pedidos com cálculo completo`} tone={s.contribution_cents!=null&&s.contribution_cents<0?'negative':'accent'}/></dl>
+  {(report.settings.usd_brl==null||s.calculated_orders<s.paid_orders)&&<div className="notice"><strong>Dados incompletos não viram lucro fictício.</strong> Configure o câmbio e os preços de IA; concilie as taxas em cada pedido. Pedidos sem registros suficientes não entram na margem calculada. <Link className="text-link" href="/settings#finance">Revisar configuração →</Link></div>}
+  <ReportFilters action="/manager/finance" params={params} finance/>
+  {report.truncated&&<p className="notice">Refine o período: os totais estão limitados aos primeiros 5.000 pedidos encontrados.</p>}
+  <section className="panel"><div className="panel-header"><div><h2>Resultado por pedido</h2><p>Abra um pedido para ver receita rateada, tentativas e margem de cada vídeo.</p></div><span className="form-help">{report.total} pedidos</span></div>{report.items.length?<FinanceOrderTable items={report.items} financial/>:<Empty title="Sem movimentos neste filtro" description="Ajuste o período ou remova os filtros para consultar os pedidos."/>}</section>
+  <ReportPagination base="/finance" params={params} total={report.total} page={page}/>
+  <section className="panel section-gap"><div className="panel-header"><h2>Como ler estes resultados</h2></div><div className="panel-body form-help">Receita confirmada − reembolsos − taxas − comissão estimada − geração convertida em BRL − rateio e ajustes informados = margem de contribuição. A receita e as taxas do pacote são divididas entre os vídeos; custos de todas as tentativas ficam no vídeo que os gerou. O câmbio e preços de modelos são os configurados para este relatório. Isso não substitui o lucro líquido contábil: impostos e despesas fixas não informadas ficam de fora. Registros antigos podem não incluir roteiro e revisão de cenas.{s.unassigned_cost_records>0&&<p className="section-gap">Há {s.unassigned_cost_records} registros de IA sem vídeo associado. Eles não foram distribuídos artificialmente entre os pedidos.</p>}</div></section>
+ </>;
 }

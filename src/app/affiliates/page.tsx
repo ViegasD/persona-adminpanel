@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import {PageHeader} from '@/components/operations-ui';
 import { fetchAffiliates } from '@/lib/storefront-api';
 import { AffiliatesClient } from './affiliates-client';
 
@@ -16,10 +16,7 @@ export default async function AffiliatesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold">Afiliados</h2>
-        <span className="text-sm text-[var(--muted-foreground)]">{affiliates.length} total</span>
-      </div>
+      <PageHeader eyebrow="Parcerias" title="Afiliados" description={`${affiliates.length} cadastros · acompanhe indicações e comissões.`}/>
       <AffiliatesClient affiliates={affiliates} />
     </div>
   );

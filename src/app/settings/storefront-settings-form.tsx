@@ -3,7 +3,7 @@ import { useState } from 'react';
 import type { StorefrontSettings, StorefrontPlan, StorefrontPolicy } from '@/lib/storefront-settings-types';
 
 const field = 'w-full min-w-0 px-3 py-2 rounded border border-[var(--border)] bg-[var(--background)]';
-const command = 'px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-50';
+const command = 'button';
 const labels: Record<Exclude<keyof StorefrontPolicy, 'revision' | 'video_duration_seconds' | 'video_model'>, string> = {
   new_orders_enabled: 'Aceitar novos pedidos', registration_enabled: 'Permitir cadastro de contas',
   credit_redemption_enabled: 'Permitir pagamento com saldo de creditos', require_account_checkout: 'Exigir conta no checkout',
