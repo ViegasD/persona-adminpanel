@@ -3,11 +3,14 @@ import {notFound} from 'next/navigation';
 import {fetchOrderVideos} from '@/lib/storefront-api';
 import {fetchFinance} from '@/lib/finance-api';
 import {PageHeader,Status,Stat,money,usd,dateTime,ErrorState} from '@/components/operations-ui';
-import {OrderFinanceActions,RetryVideo} from '@/components/order-finance-actions';
+import {OrderFinanceActions} from '@/components/order-finance-actions';
+import {VideoOperations} from '@/components/video-operations';
+import {storefrontSettingsRequest} from '@/lib/storefront-settings-api';
+import type {OrderOperations} from '@/lib/operations-types';
 export const dynamic='force-dynamic';
 export default async function OrderDetail({params}:{params:Promise<{id:string}>}){
  const{id}=await params;if(!/^\d+$/.test(id)||!Number.isSafeInteger(Number(id))||Number(id)<1)notFound();
- const [order,report]=await Promise.all([fetchOrderVideos(Number(id)).catch(()=>null),fetchFinance({order_id:Number(id)}).catch(()=>null)]);
+ const [order,report,operations]=await Promise.all([fetchOrderVideos(Number(id)).catch(()=>null),fetchFinance({order_id:Number(id)}).catch(()=>null),storefrontSettingsRequest<OrderOperations>(`orders/${id}/operations`).catch(()=>null)]);
  if(!order)return <ErrorState/>;const financial=report?.items[0];
  return <><Link className="text-link" href="/orders">← Voltar aos pedidos</Link><div className="section-gap"><PageHeader eyebrow="Pedido e produção" title={`Pedido #${id}`} description={`${order.recipient_name||'Cliente'} · ${order.email||order.phone||'Sem contato informado'}`}><Status value={order.status}/>{financial?.is_test&&<span className="badge-test">Teste</span>}</PageHeader></div>
   {financial&&<dl className="metric-strip"><Stat label="Receita confirmada" value={money(financial.net_revenue_cents)} note={`${money(financial.refunded_cents)} reembolsados`}/><Stat label="Taxas de pagamento" value={money(financial.fee_cents)} note={financial.fee_cents==null?'Taxas ainda não conciliadas':financial.fee_source==='provider'?'Conciliadas com o provedor':financial.fee_source==='manual'?'Informadas no pedido':'Estimadas ou pendentes'}/><Stat label="Geração registrada" value={usd(financial.cost_micro_usd)} note={money(financial.cost_brl_cents)}/><Stat label="Margem de contribuição" value={money(financial.contribution_cents)} note={financial.contribution_cents==null?'Há dados pendentes':'Estimativa após custos registrados'} tone="accent"/></dl>}
@@ -22,7 +25,7 @@ export default async function OrderDetail({params}:{params:Promise<{id:string}>}
     {item.message&&<details><summary>Ver mensagem do pedido</summary><p className="form-help" style={{whiteSpace:'pre-wrap',marginTop:10}}>{item.message}</p></details>}
     {f&&<dl className="video-finance"><div><dt>Receita rateada</dt><dd>{money(f.revenue_cents)}</dd></div><div><dt>IA · todas as tentativas</dt><dd>{usd(f.cost_micro_usd)}</dd></div><div><dt>Taxa + comissão</dt><dd>{f.fee_cents==null?'—':money(f.fee_cents+f.commission_cents)}</dd></div><div><dt>Margem estimada</dt><dd className={f.contribution_cents!=null&&f.contribution_cents<0?'negative':'positive'}>{money(f.contribution_cents)}</dd></div><div><dt>Tentativas de vídeo</dt><dd>{f.video_attempts}</dd></div><div><dt>Registros de IA</dt><dd>{f.cost_records}</dd></div></dl>}
     {item.error&&<p className="notice error">{item.error}</p>}
-    {financial?.processing_allowed&&item.status==='FAILED'&&order.status!=='REFUNDED'&&<RetryVideo id={item.item_id}/>}
+    {operations?<VideoOperations id={item.item_id} status={item.status} allowed={operations.processing_allowed&&order.status!=='REFUNDED'} multiple={item.character_ids.length>1} revisions={operations.revisions.filter(r=>r.item_id===item.item_id)} engagement={operations.items.find(i=>i.item_id===item.item_id)}/>:<p className="notice">Controles de produção indisponíveis. Atualize a página para tentar novamente.</p>}
    </div></article>;})}</div>
   <div className="details-grid"><section className="panel"><div className="panel-header"><h2>Histórico do pedido</h2></div><div className="panel-body"><div className="activity-line"><span className="activity-mark"/><div><strong>Pedido criado</strong><p>{dateTime(order.created_at)}</p></div></div><div className="activity-line"><span className="activity-mark"/><div><strong>Pagamento confirmado</strong><p>{dateTime(order.paid_at)}</p></div></div><div className="activity-line"><span className="activity-mark"/><div><strong>Disponibilizado ao cliente</strong><p>{dateTime(order.delivered_at)}</p></div></div></div></section>{financial&&<OrderFinanceActions key={`${id}-${financial.is_test}-${financial.fee_override_cents}`} order={financial}/>}</div>
  </>;

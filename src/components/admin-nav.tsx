@@ -24,7 +24,7 @@ export function AdminNav(){
    const active=href==='/'?pathname==='/':pathname.startsWith(href);
    return <Link key={href} href={href} className={`nav-item ${active?'is-active':''}`} aria-current={active?'page':undefined}><Icon name={icon}/><span>{label}</span>{active&&<span className="nav-dot"/>}</Link>;
   })}</nav>
-  <nav className="secondary-nav" aria-label="Outras ferramentas"><Link href="/affiliates">Afiliados <span aria-hidden="true">↗</span></Link><Link href="/legacy">Ferramentas legadas <span aria-hidden="true">↗</span></Link></nav>
+  <nav className="secondary-nav" aria-label="Outras ferramentas"><Link href="/activity" aria-current={pathname==='/activity'?'page':undefined}>Pixel e atividade <span aria-hidden="true">↗</span></Link><Link href="/operations" aria-current={pathname==='/operations'?'page':undefined}>Créditos das APIs <span aria-hidden="true">↗</span></Link><Link href="/affiliates">Afiliados <span aria-hidden="true">↗</span></Link><Link href="/legacy">Ferramentas legadas <span aria-hidden="true">↗</span></Link></nav>
   <div className="sidebar-footer"><span className="online-dot"/>Painel administrativo<a href="https://recadoanimado.com" target="_blank" rel="noopener noreferrer">Abrir a loja ↗</a></div>
  </aside>;
 }
