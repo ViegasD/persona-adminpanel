@@ -5,11 +5,13 @@ import type {Revision,Engagement} from '@/lib/operations-types';
 import {dateTime} from './operations-ui';
 
 const statuses:Record<string,string>={QUEUED:'Na fila',GENERATING:'Em geração',READY:'Pronta para revisão',CHECK_REQUIRED:'Conferência necessária',FAILED:'Falhou',PUBLISHED:'Publicada',DISCARDED:'Descartada'};
-export function VideoOperations({id,status,allowed,multiple,revisions,engagement}:{id:number;status:string;allowed:boolean;multiple:boolean;revisions:Revision[];engagement?:Engagement}){
+export function VideoOperations({id,status,allowed,multiple,revisions,engagement,error}:{id:number;status:string;allowed:boolean;multiple:boolean;revisions:Revision[];engagement?:Engagement;error?:string|null}){
  const router=useRouter();const[busy,setBusy]=useState(false);const[message,setMessage]=useState('');
  const[open,setOpen]=useState(false);const[voice,setVoice]=useState('catalog');const[reuse,setReuse]=useState(true);
  const[key,setKey]=useState<string|null>(null);const[confirmation,setConfirmation]=useState<{kind:string;id:number}|null>(null);
  const active=revisions.some(r=>['QUEUED','GENERATING','READY','CHECK_REQUIRED'].includes(r.status));
+ const latestRevision=revisions.reduce<Revision|undefined>((latest,row)=>!latest||row.id>latest.id?row:latest,undefined);
+ const sceneRejected=Boolean(error?.includes('scene failed'))||(latestRevision?.status==='FAILED'&&latestRevision.phase==='scene_review');
  async function run(kind:string,target:number,values?:unknown){setBusy(true);setMessage('');try{
   const response=await fetch('/manager/api/operations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind,id:target,values})});
   const data=await response.json();if(!response.ok)throw new Error(data.error||'Não foi possível concluir.');
@@ -20,7 +22,7 @@ export function VideoOperations({id,status,allowed,multiple,revisions,engagement
   <h3>Acesso do cliente</h3><dl className="breakdown engagement"><div><dt>Reprodução iniciada</dt><dd>{engagement?.viewed_at?dateTime(engagement.viewed_at):'Sem registro ainda'}</dd></div><div><dt>Reprodução chegou ao fim</dt><dd>{engagement?.completed_at?dateTime(engagement.completed_at):'Sem registro ainda'}</dd></div><div><dt>Clicou em baixar</dt><dd>{engagement?.downloaded_at?dateTime(engagement.downloaded_at):'Sem registro ainda'}</dd></div></dl>
   <p className="form-help">Registros desta versão, a partir desta atualização. Prévias da equipe não contam como acesso do cliente.</p>
   {engagement?.ratings.map((rating,i)=><blockquote className="customer-rating" key={i}><strong><span className="rating-stars" role="img" aria-label={`${rating.score} de 5 estrelas`}>{'★'.repeat(rating.score)}{'☆'.repeat(5-rating.score)}</span> · {dateTime(rating.rated_at)}</strong>{rating.comment&&<p>{rating.comment}</p>}</blockquote>)}
-  {allowed&&['FAILED','READY'].includes(status)&&!active&&!open&&<button className="button secondary" onClick={()=>{setOpen(true);setKey(crypto.randomUUID());}}>{status==='FAILED'?'Retomar geração':'Gerar nova versão'}</button>}
+  {allowed&&['FAILED','READY'].includes(status)&&!active&&!open&&<button className="button secondary" onClick={()=>{setReuse(!sceneRejected);setOpen(true);setKey(crypto.randomUUID());}}>{status==='FAILED'?'Retomar geração':'Gerar nova versão'}</button>}
   {open&&<form onSubmit={e=>{e.preventDefault();run('revision-create',id,{request_key:key,voice,reuse_scene:reuse});}} className="revision-form"><fieldset disabled={busy}><legend>Nova versão para revisão</legend><p className="form-help">Esta operação usa créditos do provedor. Confira o saldo após a recarga. O vídeo atual continua disponível até você publicar a substituição.</p>
    <label className="form-label">Voz<select className="form-control" value={voice} onChange={e=>setVoice(e.target.value)} disabled={multiple}><option value="catalog">Voz definida no catálogo</option><option value="male">Masculina</option><option value="female">Feminina</option></select></label>
    <label className="checkbox-label"><input type="checkbox" checked={reuse} onChange={e=>setReuse(e.target.checked)}/>Reutilizar a cena existente, se disponível</label><p className="form-help">Desmarcar cria uma nova imagem e adiciona o custo dessa geração.</p>

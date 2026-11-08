@@ -14,6 +14,9 @@ export function AutoRefresh({ interval = 30_000 }: { interval?: number }) {
     setLastUpdated(fmt());
 
     const id = setInterval(() => {
+      if (document.visibilityState !== 'visible'
+          || document.activeElement?.matches('input,textarea,select')
+          || Array.from(document.querySelectorAll('video')).some(video => !video.paused && !video.ended)) return;
       router.refresh();
       setLastUpdated(fmt());
     }, interval);
