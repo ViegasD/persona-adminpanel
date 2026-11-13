@@ -1,5 +1,6 @@
 import 'server-only';
 import type { StorefrontPlan, StorefrontSettings } from './storefront-settings-types';
+import {readOperationResponse} from './operation-response';
 
 export async function storefrontSettingsRequest<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
   const base = process.env.STOREFRONT_API_URL;
@@ -14,7 +15,7 @@ export async function storefrontSettingsRequest<T>(path: string, method = 'GET',
     const error=await response.json().catch(()=>null);
     throw new Error(typeof error?.detail==='string'?error.detail:response.status===409?'Configurações alteradas. Recarregue antes de salvar.':'Não foi possível consultar a loja. Tente novamente.');
   }
-  return response.json();
+  return await readOperationResponse<T>(response);
 }
 export async function fetchStorefrontSettings() {
   const [settings, plans] = await Promise.all([

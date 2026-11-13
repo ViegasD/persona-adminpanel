@@ -3,6 +3,7 @@ import {useState} from 'react';
 import {useRouter} from 'next/navigation';
 import type {Revision,Engagement} from '@/lib/operations-types';
 import {dateTime} from './operations-ui';
+import {readOperationResponse} from '@/lib/operation-response';
 
 const statuses:Record<string,string>={QUEUED:'Na fila',GENERATING:'Em geração',READY:'Pronta para revisão',CHECK_REQUIRED:'Conferência necessária',FAILED:'Falhou',PUBLISHED:'Publicada',DISCARDED:'Descartada'};
 export function VideoOperations({id,status,allowed,multiple,revisions,engagement,error}:{id:number;status:string;allowed:boolean;multiple:boolean;revisions:Revision[];engagement?:Engagement;error?:string|null}){
@@ -14,7 +15,7 @@ export function VideoOperations({id,status,allowed,multiple,revisions,engagement
  const sceneRejected=Boolean(error?.includes('scene failed'))||(latestRevision?.status==='FAILED'&&latestRevision.phase==='scene_review');
  async function run(kind:string,target:number,values?:unknown){setBusy(true);setMessage('');try{
   const response=await fetch('/manager/api/operations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind,id:target,values})});
-  const data=await response.json();if(!response.ok)throw new Error(data.error||'Não foi possível concluir.');
+  await readOperationResponse(response);
   setMessage(kind==='revision-publish'?'Versão publicada na conta do cliente.':kind==='revision-create'?'Geração na fila. A nova versão ficará aqui para aprovação.':'Operação concluída.');
   setOpen(false);setConfirmation(null);if(kind==='revision-create')setKey(null);router.refresh();
  }catch(error){setMessage(error instanceof Error?error.message:'Erro na operação.');}finally{setBusy(false);}}
